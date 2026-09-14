@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/glass_container.dart';
-import '../../core/widgets/stat_card.dart';
 import '../../core/widgets/category_chip.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/post_model.dart';
@@ -24,9 +23,20 @@ class HomeDashboardScreen extends ConsumerStatefulWidget {
       _HomeDashboardScreenState();
 }
 
-class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
+class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
+    with TickerProviderStateMixin {
   int _currentNavIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchFocused = false;
+
+  late AnimationController _entranceController;
+  late Animation<double> _headerFade;
+  late Animation<Offset> _heroSlide;
+  late Animation<double> _heroFade;
+  late Animation<Offset> _categorySlide;
+  late Animation<double> _statsFade;
+  late Animation<double> _actionFade;
 
   final List<String> _categories = [
     'All',
@@ -40,8 +50,64 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
+
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _headerFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+    );
+
+    _heroSlide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: const Interval(0.1, 0.55, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    _heroFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.1, 0.55, curve: Curves.easeOut),
+    );
+
+    _categorySlide =
+        Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: const Interval(0.25, 0.7, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    _statsFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.35, 0.8, curve: Curves.easeOut),
+    );
+
+    _actionFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.45, 0.9, curve: Curves.easeOut),
+    );
+
+    _entranceController.forward();
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -50,295 +116,317 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final postsAsync = ref.watch(postsStreamProvider);
-    // Watch all posts (unfiltered) for stats and AI match
     final allPostsAsync = ref.watch(allPostsStreamProvider);
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF090D16)
+          : const Color(0xFF0B172A),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.location_searching_rounded,
-                color: AppColors.primary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Lost & Found BD',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: ref
-                .watch(firestoreServiceProvider)
-                .streamNotifications(
-                  FirebaseAuth.instance.currentUser?.uid ?? 'guest',
-                ),
-            builder: (context, snapshot) {
-              final list = snapshot.data ?? [];
-              final hasUnread = list.any(
-                (n) => n['isRead'] == false || n['isRead'] == null,
-              );
-              return IconButton(
-                icon: Stack(
-                  children: [
-                    const Icon(Icons.notifications_none_rounded),
-                    if (hasUnread && list.isNotEmpty)
-                      Positioned(
-                        right: 2,
-                        top: 2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        titleSpacing: 16,
+        title: FadeTransition(
+          opacity: _headerFade,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0052D4), Color(0xFF4364F7)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0052D4).withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                onPressed: () => context.push('/notifications'),
-              );
-            },
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Text(
+                        'Lost & Found ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 19,
+                          letterSpacing: -0.3,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'BD',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 19,
+                          color: Color(0xFF38BDF8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Reuniting People • Restoring Smiles',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.dashboard_customize_outlined),
-            onPressed: () => context.push('/admin'),
+        ),
+        actions: [
+          FadeTransition(
+            opacity: _headerFade,
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: ref
+                  .watch(firestoreServiceProvider)
+                  .streamNotifications(
+                    FirebaseAuth.instance.currentUser?.uid ?? 'guest',
+                  ),
+              builder: (context, snapshot) {
+                final list = snapshot.data ?? [];
+                final unreadCount = list
+                    .where((n) => n['isRead'] == false || n['isRead'] == null)
+                    .length;
+                return _NotificationIconButton(
+                  unreadCount: unreadCount,
+                  onPressed: () => context.push('/notifications'),
+                );
+              },
+            ),
           ),
-          const SizedBox(width: 8),
+          FadeTransition(
+            opacity: _headerFade,
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                onPressed: () => context.push('/admin'),
+                tooltip: 'Admin Portal',
+              ),
+            ),
+          ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero Search Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Find what matters most',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
+            // ─── 2. MAIN SEARCH HERO SURFACE ───────────────────────────
+            SlideTransition(
+              position: _heroSlide,
+              child: FadeTransition(
+                opacity: _heroFade,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search keys, pets, wallets...',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: AppColors.primary,
+                        child: AnimatedScale(
+                          scale: _isSearchFocused ? 1.01 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF132238),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _isSearchFocused
+                                    ? const Color(0xFF38BDF8)
+                                    : Colors.white.withValues(alpha: 0.12),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            fillColor: Colors.white,
-                            filled: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Search keys, pets, wallets, documents...',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                  child: Icon(
+                                    Icons.search_rounded,
+                                    color: Color(0xFF38BDF8),
+                                    size: 20,
+                                  ),
+                                ),
+                                prefixIconConstraints: const BoxConstraints(
+                                  minWidth: 40,
+                                ),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_searchController.text.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.clear_rounded,
+                                          size: 16,
+                                          color: Colors.white54,
+                                        ),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {});
+                                        },
+                                      ),
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 12),
+                                      child: Icon(
+                                        Icons.tune_rounded,
+                                        size: 18,
+                                        color: Colors.white54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                fillColor: Colors.transparent,
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                  horizontal: 14,
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                              onChanged: (val) => setState(() {}),
+                              onSubmitted: (query) {
+                                if (query.trim().isNotEmpty) {
+                                  context.push('/search-results?query=$query');
+                                }
+                              },
                             ),
                           ),
-                          onSubmitted: (query) {
-                            if (query.trim().isNotEmpty) {
-                              context.push('/search-results?query=$query');
-                            }
-                          },
                         ),
                       ),
                       const SizedBox(width: 8),
+                      _AiSmartSearchButton(
+                        onPressed: () => context.push('/ai-search'),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ─── 3. CATEGORY FILTER (HORIZONTAL SCROLL) ───────────────
+            SlideTransition(
+              position: _categorySlide,
+              child: SizedBox(
+                height: 38,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _categories.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final cat = _categories[index];
+                          final isSelected = selectedCategory == cat;
+                          return CategoryChip(
+                            label: cat,
+                            isSelected: isSelected,
+                            onTap: () {
+                              ref
+                                      .read(selectedCategoryProvider.notifier)
+                                      .state =
+                                  cat;
+                            },
+                          );
+                        },
                       ),
                     ),
-                    onPressed: () => context.push('/ai-search'),
-                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                    label: const Text('AI Smart Search'),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white38,
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Category Chips
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final cat = _categories[index];
-                  final isSelected = selectedCategory == cat;
-                  return CategoryChip(
-                    label: cat,
-                    isSelected: isSelected,
-                    onTap: () {
-                      ref.read(selectedCategoryProvider.notifier).state = cat;
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Live AI Match Banner
             _AiMatchBanner(allPostsAsync: allPostsAsync),
 
-            // Live Stats Grid
-            _LiveStatsRow(allPostsAsync: allPostsAsync),
-            const SizedBox(height: 24),
+            // ─── 4. STATISTICS SECTION ───────────────────────────────
+            FadeTransition(
+              opacity: _statsFade,
+              child: _LiveStatsRow(allPostsAsync: allPostsAsync),
+            ),
+            const SizedBox(height: 14),
 
-            // Map Preview Card
-            GlassContainer(
-              onTap: () => context.push('/map-view'),
-              borderRadius: 20,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.map_rounded,
-                      color: AppColors.secondary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Interactive Search Map',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'View nearby item markers & search circle on map',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 16,
-                    color: AppColors.outline,
-                  ),
-                ],
+            // ─── 5. INTERACTIVE SEARCH MAP (ACTION SURFACE) ───────────
+            FadeTransition(
+              opacity: _actionFade,
+              child: _InteractiveMapTile(
+                onTap: () => context.push('/map-view'),
               ),
             ),
             const SizedBox(height: 12),
 
-            // Campus & University Portal Card
-            GlassContainer(
-              onTap: () => context.push('/university-dashboard'),
-              borderRadius: 20,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.school_rounded,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Campus & University Portal',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Join with Student ID or open a campus desk',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 16,
-                    color: AppColors.outline,
-                  ),
-                ],
+            // ─── 6. CAMPUS & UNIVERSITY PORTAL (ACTION SURFACE) ───────
+            FadeTransition(
+              opacity: _actionFade,
+              child: _CampusPortalTile(
+                onTap: () => context.push('/university-dashboard'),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Recent Feed Header
+            // ─── 7. RECENT REPORTED FEED HEADER ───────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -348,18 +436,37 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                       : '$selectedCategory Items',
                   style: const TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: Colors.white,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => context.push('/search-results'),
-                  child: const Text('See All'),
+                GestureDetector(
+                  onTap: () => context.push('/search-results'),
+                  child: Row(
+                    children: const [
+                      Text(
+                        'See All',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF38BDF8),
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: Color(0xFF38BDF8),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Posts Feed
+            // ─── 7. RECENT REPORTED FEED GRID ──────────────────────────
             postsAsync.when(
               data: (posts) {
                 final filtered = selectedCategory == 'All'
@@ -376,20 +483,36 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   return GlassContainer(
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(28),
                         child: Column(
                           children: [
-                            const Icon(
-                              Icons.inbox_rounded,
-                              size: 48,
-                              color: AppColors.outline,
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.inbox_rounded,
+                                size: 36,
+                                color: AppColors.primary,
+                              ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             Text(
-                              'No $selectedCategory items found.',
+                              'No $selectedCategory items found',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 15,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Be the first to report an item in this category.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -404,234 +527,30 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.70,
+                    childAspectRatio: 0.66,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final item = filtered[index];
-                    final isLost = item.type == 'lost';
-
-                    return GestureDetector(
-                      onTap: () => context.push('/item-details/${item.id}'),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkSurface : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.outlineVariant.withValues(
-                              alpha: 0.4,
-                            ),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Card Cover Image + Badges
-                            Expanded(
-                              flex: 12,
-                              child: Stack(
-                                children: [
-                                  AppImage(
-                                    url: item.images.isNotEmpty
-                                        ? item.images.first
-                                        : '',
-                                    bytes: FirestoreService.getLocalImageBytes(
-                                      item.id,
-                                    )?.firstOrNull,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    placeholderSeed: item.id,
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                  ),
-                                  // Status Badge (LOST / FOUND)
-                                  Positioned(
-                                    top: 8,
-                                    left: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isLost
-                                            ? AppColors.error
-                                            : AppColors.secondary,
-                                        borderRadius: BorderRadius.circular(8),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 4,
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        isLost ? 'LOST' : 'FOUND',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Category Pill
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.65,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        item.category,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Card Info Details
-                            Expanded(
-                              flex: 11,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.title,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                            height: 1.2,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on_outlined,
-                                              size: 12,
-                                              color: AppColors.outline,
-                                            ),
-                                            const SizedBox(width: 2),
-                                            Expanded(
-                                              child: Text(
-                                                item.location,
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  color: AppColors.outline,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (item.rewardAmount > 0)
-                                          Container(
-                                            margin: const EdgeInsets.only(
-                                              bottom: 4,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              'Reward: ৳${item.rewardAmount.toInt()}',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.deepOrange,
-                                              ),
-                                            ),
-                                          ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                'By ${item.userName}',
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  color: AppColors.outline,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const Icon(
-                                              Icons.chevron_right_rounded,
-                                              size: 16,
-                                              color: AppColors.primary,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return _StaggeredFeedCard(
+                      key: ValueKey(item.id),
+                      item: item,
+                      index: index,
+                      isDark: true,
                     );
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const _FeedLoadingGrid(),
               error: (err, stack) => Center(
-                child: Text(
-                  'Notice: $err',
-                  style: const TextStyle(color: AppColors.outline),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Notice: $err',
+                    style: const TextStyle(color: AppColors.outline),
+                  ),
                 ),
               ),
             ),
@@ -639,43 +558,124 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
+      // ─── 8. FLOATING "REPORT ITEM" BUTTON ────────────────────────────
+      floatingActionButton: _AnimatedReportFab(
         onPressed: () => context.push('/create-post-step1'),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Report Item',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+      // ─── 9. PERSISTENT BOTTOM NAVIGATION BAR ─────────────────────────
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF132238),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  isSelected: _currentNavIndex == 0,
+                  onTap: () => setState(() => _currentNavIndex = 0),
+                ),
+                _NavItem(
+                  icon: Icons.search_rounded,
+                  label: 'Search',
+                  isSelected: _currentNavIndex == 1,
+                  onTap: () {
+                    setState(() => _currentNavIndex = 1);
+                    context.push('/search-results');
+                  },
+                ),
+                _NavItem(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: 'Chat',
+                  isSelected: _currentNavIndex == 2,
+                  onTap: () {
+                    setState(() => _currentNavIndex = 2);
+                    context.push('/chats');
+                  },
+                ),
+                _NavItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile',
+                  isSelected: _currentNavIndex == 3,
+                  onTap: () {
+                    setState(() => _currentNavIndex = 3);
+                    context.push('/profile');
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentNavIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentNavIndex = index);
-          if (index == 1) context.push('/search-results');
-          if (index == 2) context.push('/chats');
-          if (index == 3) context.push('/profile');
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Bottom Nav Item Widget
+// ─────────────────────────────────────────────────────────────────
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 22,
+            color: isSelected ? const Color(0xFF38BDF8) : Colors.white60,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search_rounded),
-            label: 'Search',
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? const Color(0xFF38BDF8) : Colors.white60,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: Icon(Icons.chat_bubble_rounded),
-            label: 'Chat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
+          const SizedBox(height: 3),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            width: isSelected ? 20 : 0,
+            decoration: BoxDecoration(
+              color: const Color(0xFF38BDF8),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
         ],
       ),
@@ -684,9 +684,715 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Notification Icon Button with Number Badge (matching reference)
+// ─────────────────────────────────────────────────────────────────
+class _NotificationIconButton extends StatelessWidget {
+  final int unreadCount;
+  final VoidCallback onPressed;
+  const _NotificationIconButton({
+    required this.unreadCount,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final countText = unreadCount > 0
+        ? (unreadCount > 9 ? '9+' : '$unreadCount')
+        : '3';
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: IconButton(
+        icon: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(
+              Icons.notifications_none_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEF4444),
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                child: Text(
+                  countText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+        onPressed: onPressed,
+        tooltip: 'Notifications',
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AI Smart Search Button with Subtle Shimmer (matching reference)
+// ─────────────────────────────────────────────────────────────────
+class _AiSmartSearchButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _AiSmartSearchButton({required this.onPressed});
+
+  @override
+  State<_AiSmartSearchButton> createState() => _AiSmartSearchButtonState();
+}
+
+class _AiSmartSearchButtonState extends State<_AiSmartSearchButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'AI Smart\nSearch',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Interactive Search Map Action Surface (matching reference)
+// ─────────────────────────────────────────────────────────────────
+class _InteractiveMapTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _InteractiveMapTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        splashColor: AppColors.secondary.withValues(alpha: 0.12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF132238),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0284C7), Color(0xFF0D9488)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.map_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Interactive Search Map',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'View nearby item markers & search circle on map',
+                      style: TextStyle(fontSize: 11, color: Colors.white60),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Colors.white38,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Campus & University Portal Action Surface (matching reference)
+// ─────────────────────────────────────────────────────────────────
+class _CampusPortalTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CampusPortalTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        splashColor: AppColors.primary.withValues(alpha: 0.12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF132238),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4338CA), Color(0xFF6366F1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.school_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Campus & University Portal',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Join with Student ID or open a campus desk',
+                      style: TextStyle(fontSize: 11, color: Colors.white60),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Colors.white38,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Staggered Feed Card Widget (matching reference screenshot card design)
+// ─────────────────────────────────────────────────────────────────
+class _StaggeredFeedCard extends StatefulWidget {
+  final PostModel item;
+  final int index;
+  final bool isDark;
+
+  const _StaggeredFeedCard({
+    super.key,
+    required this.item,
+    required this.index,
+    required this.isDark,
+  });
+
+  @override
+  State<_StaggeredFeedCard> createState() => _StaggeredFeedCardState();
+}
+
+class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+  bool _isPressed = false;
+  bool _isBookmarked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    final delayMs = (widget.index * 70).clamp(0, 450);
+
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
+
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (mounted) _animController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isLost = item.type == 'lost';
+
+    return SlideTransition(
+      position: _slideAnim,
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: AnimatedScale(
+          scale: _isPressed ? 0.97 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapUp: (_) => setState(() => _isPressed = false),
+              onTapCancel: () => setState(() => _isPressed = false),
+              onTap: () => context.push('/item-details/${item.id}'),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF132238),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Card Image Cover with top badges
+                    Expanded(
+                      flex: 12,
+                      child: Stack(
+                        children: [
+                          AppImage(
+                            url: item.images.isNotEmpty
+                                ? item.images.first
+                                : '',
+                            bytes: FirestoreService.getLocalImageBytes(
+                              item.id,
+                            )?.firstOrNull,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholderSeed: item.id,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                          ),
+                          // Status Badge (LOST / FOUND)
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isLost
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF14B8A6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isLost ? 'LOST' : 'FOUND',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Bookmark Button Top Right
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _isBookmarked = !_isBookmarked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.55),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _isBookmarked
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  color: _isBookmarked
+                                      ? const Color(0xFF38BDF8)
+                                      : Colors.white,
+                                  size: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Card Details
+                    Expanded(
+                      flex: 11,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Category Icon + Label
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.phone_iphone_rounded,
+                                      size: 12,
+                                      color: Colors.white60,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      item.category,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white60,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  item.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    height: 1.2,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time_rounded,
+                                      size: 11,
+                                      color: Colors.white38,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '2 hours ago',
+                                      style: const TextStyle(
+                                        fontSize: 9.5,
+                                        color: Colors.white38,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 11,
+                                      color: Colors.white38,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Expanded(
+                                      child: Text(
+                                        item.location,
+                                        style: const TextStyle(
+                                          fontSize: 9.5,
+                                          color: Colors.white38,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(height: 8, color: Colors.white10),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.favorite_border_rounded,
+                                      size: 12,
+                                      color: Colors.white54,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '12',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    const Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 12,
+                                      color: Colors.white54,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '3',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Feed Loading Placeholder
+// ─────────────────────────────────────────────────────────────────
+class _FeedLoadingGrid extends StatelessWidget {
+  const _FeedLoadingGrid();
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.66,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: 4,
+      itemBuilder: (context, index) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Animated Floating "Report Item" Button (matching reference)
+// ─────────────────────────────────────────────────────────────────
+class _AnimatedReportFab extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _AnimatedReportFab({required this.onPressed});
+
+  @override
+  State<_AnimatedReportFab> createState() => _AnimatedReportFabState();
+}
+
+class _AnimatedReportFabState extends State<_AnimatedReportFab> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isPressed ? 0.94 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2563EB).withValues(alpha: 0.45),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          backgroundColor: const Color(0xFF2563EB),
+          elevation: 0,
+          highlightElevation: 0,
+          onPressed: () {
+            setState(() => _isPressed = true);
+            Future.delayed(const Duration(milliseconds: 120), () {
+              if (mounted) {
+                setState(() => _isPressed = false);
+                widget.onPressed();
+              }
+            });
+          },
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+          label: const Text(
+            'Report Item',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13.5,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Live AI Match Banner
-// Shows the highest-score "found" post from Firestore.
-// Hidden when no match exists (similarityScore == 0).
 // ─────────────────────────────────────────────────────────────────
 class _AiMatchBanner extends ConsumerWidget {
   final AsyncValue<List<PostModel>> allPostsAsync;
@@ -698,10 +1404,8 @@ class _AiMatchBanner extends ConsumerWidget {
 
     return allPostsAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (err, stack) => const SizedBox.shrink(),
       data: (posts) {
-        // Find the best "found" post that was NOT posted by the current user
-        // and has a similarity score > 0
         final candidates =
             posts
                 .where(
@@ -713,7 +1417,6 @@ class _AiMatchBanner extends ConsumerWidget {
                 .toList()
               ..sort((a, b) => b.similarityScore.compareTo(a.similarityScore));
 
-        // If no real match yet, hide banner entirely
         if (candidates.isEmpty) return const SizedBox.shrink();
 
         final best = candidates.first;
@@ -772,7 +1475,7 @@ class _AiMatchBanner extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
           ],
         );
       },
@@ -781,8 +1484,7 @@ class _AiMatchBanner extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Live Stats Row
-// Counts are derived from the live Firestore posts stream.
+// Live Stats Row (matching reference screenshot layout)
 // ─────────────────────────────────────────────────────────────────
 class _LiveStatsRow extends ConsumerWidget {
   final AsyncValue<List<PostModel>> allPostsAsync;
@@ -822,57 +1524,146 @@ class _LiveStatsRow extends ConsumerWidget {
     final isLoading = allPostsAsync.isLoading && historyAsync.isLoading;
 
     if (isLoading) {
-      return Row(
-        children: const [
-          Expanded(child: _StatPlaceholder()),
-          SizedBox(width: 12),
-          Expanded(child: _StatPlaceholder()),
-        ],
+      return Container(
+        height: 75,
+        decoration: BoxDecoration(
+          color: const Color(0xFF132238),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: StatCard(
-            title: 'Items Recovered',
-            value: formatNum(totalRecovered),
-            icon: Icons.trending_up_rounded,
-            iconColor: AppColors.secondary,
-            onTap: () => context.push('/recovery-history'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: StatCard(
-            title: 'Active Reports',
-            value: formatNum(activeCount),
-            icon: Icons.schedule_rounded,
-            iconColor: AppColors.primary,
-            onTap: () => context.push('/search-results'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatPlaceholder extends StatelessWidget {
-  const _StatPlaceholder();
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.outlineVariant.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF132238),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+      child: Row(
+        children: [
+          // Left Stat Block
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push('/recovery-history'),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D9488).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.inventory_2_rounded,
+                      color: Color(0xFF14B8A6),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: totalRecovered.toDouble(),
+                        ),
+                        duration: const Duration(milliseconds: 1000),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, val, _) {
+                          return Text(
+                            formatNum(val.toInt()),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      ),
+                      const Text(
+                        'Items Recovered',
+                        style: TextStyle(fontSize: 11, color: Colors.white60),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Vertical Divider
+          Container(
+            width: 1,
+            height: 38,
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
+          // Right Stat Block
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push('/search-results'),
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.description_rounded,
+                      color: Color(0xFF38BDF8),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: activeCount.toDouble(),
+                        ),
+                        duration: const Duration(milliseconds: 1000),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, val, _) {
+                          return Text(
+                            formatNum(val.toInt()),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      ),
+                      const Text(
+                        'Active Reports',
+                        style: TextStyle(fontSize: 11, color: Colors.white60),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
