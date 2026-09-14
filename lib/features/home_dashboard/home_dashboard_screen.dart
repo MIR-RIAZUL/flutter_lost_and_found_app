@@ -119,9 +119,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
     final allPostsAsync = ref.watch(allPostsStreamProvider);
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF090D16)
-          : const Color(0xFF0B172A),
+      backgroundColor: isDark ? const Color(0xFF090D16) : AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
@@ -159,14 +157,14 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
+                    children: [
                       Text(
                         'Lost & Found ',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 19,
                           letterSpacing: -0.3,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppColors.onSurface,
                         ),
                       ),
                       Text(
@@ -174,7 +172,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 19,
-                          color: Color(0xFF38BDF8),
+                          color: isDark
+                              ? const Color(0xFF38BDF8)
+                              : AppColors.primary,
                         ),
                       ),
                     ],
@@ -185,7 +185,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -219,15 +221,21 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
             child: Container(
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : AppColors.primary.withValues(alpha: 0.2),
+                ),
               ),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.qr_code_scanner_rounded,
                   size: 20,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.primary,
                 ),
                 onPressed: () => context.push('/admin'),
                 tooltip: 'Admin Portal',
@@ -257,17 +265,25 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                           duration: const Duration(milliseconds: 200),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFF132238),
+                              color: isDark
+                                  ? const Color(0xFF132238)
+                                  : AppColors.surface,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: _isSearchFocused
-                                    ? const Color(0xFF38BDF8)
-                                    : Colors.white.withValues(alpha: 0.12),
+                                    ? (isDark
+                                          ? const Color(0xFF38BDF8)
+                                          : AppColors.primary)
+                                    : (isDark
+                                          ? Colors.white.withValues(alpha: 0.12)
+                                          : AppColors.outlineVariant),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
+                                  color: isDark
+                                      ? Colors.black.withValues(alpha: 0.2)
+                                      : Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -276,24 +292,32 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.onSurface,
                               ),
                               decoration: InputDecoration(
                                 hintText:
                                     'Search keys, pets, wallets, documents...',
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.4)
+                                      : AppColors.onSurfaceVariant,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.normal,
                                 ),
-                                prefixIcon: const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   child: Icon(
                                     Icons.search_rounded,
-                                    color: Color(0xFF38BDF8),
+                                    color: isDark
+                                        ? const Color(0xFF38BDF8)
+                                        : AppColors.primary,
                                     size: 20,
                                   ),
                                 ),
@@ -305,22 +329,26 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                                   children: [
                                     if (_searchController.text.isNotEmpty)
                                       IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.clear_rounded,
                                           size: 16,
-                                          color: Colors.white54,
+                                          color: isDark
+                                              ? Colors.white54
+                                              : AppColors.onSurfaceVariant,
                                         ),
                                         onPressed: () {
                                           _searchController.clear();
                                           setState(() {});
                                         },
                                       ),
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 12),
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
                                       child: Icon(
                                         Icons.tune_rounded,
                                         size: 18,
-                                        color: Colors.white54,
+                                        color: isDark
+                                            ? Colors.white54
+                                            : AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -387,9 +415,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
-                      color: Colors.white38,
+                      color: isDark ? Colors.white38 : Colors.black26,
                       size: 20,
                     ),
                   ],
@@ -434,30 +462,34 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                   selectedCategory == 'All'
                       ? 'Recent Reported Feed'
                       : '$selectedCategory Items',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.onSurface,
                   ),
                 ),
                 GestureDetector(
                   onTap: () => context.push('/search-results'),
                   child: Row(
-                    children: const [
+                    children: [
                       Text(
                         'See All',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: Color(0xFF38BDF8),
+                          color: isDark
+                              ? const Color(0xFF38BDF8)
+                              : AppColors.primary,
                         ),
                       ),
-                      SizedBox(width: 2),
+                      const SizedBox(width: 2),
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 18,
-                        color: Color(0xFF38BDF8),
+                        color: isDark
+                            ? const Color(0xFF38BDF8)
+                            : AppColors.primary,
                       ),
                     ],
                   ),
@@ -501,10 +533,12 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                             const SizedBox(height: 12),
                             Text(
                               'No $selectedCategory items found',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: Colors.white,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.onSurface,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -512,7 +546,9 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                               'Be the first to report an item in this category.',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.6)
+                                    : AppColors.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -538,7 +574,7 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
                       key: ValueKey(item.id),
                       item: item,
                       index: index,
-                      isDark: true,
+                      isDark: isDark,
                     );
                   },
                 );
@@ -566,15 +602,19 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen>
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF132238),
+          color: isDark ? const Color(0xFF132238) : AppColors.surface,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : AppColors.outlineVariant,
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.35)
+                  : Colors.black.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 6),
             ),
@@ -647,24 +687,23 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFF38BDF8) : AppColors.primary;
+    final inactiveColor = isDark ? Colors.white60 : AppColors.onSurfaceVariant;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: isSelected ? const Color(0xFF38BDF8) : Colors.white60,
-          ),
+          Icon(icon, size: 22, color: isSelected ? activeColor : inactiveColor),
           const SizedBox(height: 3),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? const Color(0xFF38BDF8) : Colors.white60,
+              color: isSelected ? activeColor : inactiveColor,
             ),
           ),
           const SizedBox(height: 3),
@@ -673,7 +712,7 @@ class _NavItem extends StatelessWidget {
             height: 3,
             width: isSelected ? 20 : 0,
             decoration: BoxDecoration(
-              color: const Color(0xFF38BDF8),
+              color: activeColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -696,6 +735,7 @@ class _NotificationIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final countText = unreadCount > 0
         ? (unreadCount > 9 ? '9+' : '$unreadCount')
         : '3';
@@ -703,19 +743,25 @@ class _NotificationIconButton extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : AppColors.primary.withValues(alpha: 0.08),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.15)
+              : AppColors.primary.withValues(alpha: 0.2),
+        ),
       ),
       child: IconButton(
         icon: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            const Icon(
+            Icon(
               Icons.notifications_none_rounded,
               size: 20,
-              color: Colors.white,
+              color: isDark ? Colors.white : AppColors.primary,
             ),
             Positioned(
               right: -4,
@@ -842,6 +888,7 @@ class _InteractiveMapTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -851,12 +898,18 @@ class _InteractiveMapTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF132238),
+            color: isDark ? const Color(0xFF132238) : AppColors.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : AppColors.outlineVariant,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -884,27 +937,32 @@ class _InteractiveMapTile extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Interactive Search Map',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.onSurface,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'View nearby item markers & search circle on map',
-                      style: TextStyle(fontSize: 11, color: Colors.white60),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.white60
+                            : AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Colors.white38,
+                color: isDark ? Colors.white38 : AppColors.onSurfaceVariant,
               ),
             ],
           ),
@@ -923,6 +981,7 @@ class _CampusPortalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -932,12 +991,18 @@ class _CampusPortalTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF132238),
+            color: isDark ? const Color(0xFF132238) : AppColors.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : AppColors.outlineVariant,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -965,27 +1030,32 @@ class _CampusPortalTile extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Campus & University Portal',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.onSurface,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Join with Student ID or open a campus desk',
-                      style: TextStyle(fontSize: 11, color: Colors.white60),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.white60
+                            : AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Colors.white38,
+                color: isDark ? Colors.white38 : AppColors.onSurfaceVariant,
               ),
             ],
           ),
@@ -1073,14 +1143,20 @@ class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF132238),
+                  color: widget.isDark
+                      ? const Color(0xFF132238)
+                      : AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: widget.isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : AppColors.outlineVariant,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.25),
+                      color: widget.isDark
+                          ? Colors.black.withValues(alpha: 0.25)
+                          : Colors.black.withValues(alpha: 0.06),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1179,18 +1255,22 @@ class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
                                 // Category Icon + Label
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.phone_iphone_rounded,
                                       size: 12,
-                                      color: Colors.white60,
+                                      color: widget.isDark
+                                          ? Colors.white60
+                                          : AppColors.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       item.category,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.white60,
+                                        color: widget.isDark
+                                            ? Colors.white60
+                                            : AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -1198,11 +1278,13 @@ class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
                                 const SizedBox(height: 3),
                                 Text(
                                   item.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     height: 1.2,
-                                    color: Colors.white,
+                                    color: widget.isDark
+                                        ? Colors.white
+                                        : AppColors.onSurface,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -1210,32 +1292,40 @@ class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.access_time_rounded,
                                       size: 11,
-                                      color: Colors.white38,
+                                      color: widget.isDark
+                                          ? Colors.white38
+                                          : AppColors.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
                                       '2 hours ago',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 9.5,
-                                        color: Colors.white38,
+                                        color: widget.isDark
+                                            ? Colors.white38
+                                            : AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(
+                                    Icon(
                                       Icons.location_on_outlined,
                                       size: 11,
-                                      color: Colors.white38,
+                                      color: widget.isDark
+                                          ? Colors.white38
+                                          : AppColors.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 2),
                                     Expanded(
                                       child: Text(
                                         item.location,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 9.5,
-                                          color: Colors.white38,
+                                          color: widget.isDark
+                                              ? Colors.white38
+                                              : AppColors.onSurfaceVariant,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -1248,34 +1338,47 @@ class _StaggeredFeedCardState extends State<_StaggeredFeedCard>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Divider(height: 8, color: Colors.white10),
+                                Divider(
+                                  height: 8,
+                                  color: widget.isDark
+                                      ? Colors.white10
+                                      : AppColors.outlineVariant,
+                                ),
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.favorite_border_rounded,
                                       size: 12,
-                                      color: Colors.white54,
+                                      color: widget.isDark
+                                          ? Colors.white54
+                                          : AppColors.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '12',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
-                                        color: Colors.white70,
+                                        color: widget.isDark
+                                            ? Colors.white70
+                                            : AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(width: 14),
-                                    const Icon(
+                                    Icon(
                                       Icons.chat_bubble_outline_rounded,
                                       size: 12,
-                                      color: Colors.white54,
+                                      color: widget.isDark
+                                          ? Colors.white54
+                                          : AppColors.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '3',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
-                                        color: Colors.white70,
+                                        color: widget.isDark
+                                            ? Colors.white70
+                                            : AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -1314,19 +1417,24 @@ class _FeedLoadingGrid extends StatelessWidget {
         mainAxisSpacing: 12,
       ),
       itemCount: 4,
-      itemBuilder: (context, index) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
+      itemBuilder: (context, index) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-      ),
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1523,11 +1631,12 @@ class _LiveStatsRow extends ConsumerWidget {
 
     final isLoading = allPostsAsync.isLoading && historyAsync.isLoading;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isLoading) {
       return Container(
         height: 75,
         decoration: BoxDecoration(
-          color: const Color(0xFF132238),
+          color: isDark ? const Color(0xFF132238) : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: const Center(
@@ -1543,12 +1652,18 @@ class _LiveStatsRow extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF132238),
+        color: isDark ? const Color(0xFF132238) : AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.outlineVariant,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1588,17 +1703,24 @@ class _LiveStatsRow extends ConsumerWidget {
                         builder: (context, val, _) {
                           return Text(
                             formatNum(val.toInt()),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.onSurface,
                             ),
                           );
                         },
                       ),
-                      const Text(
+                      Text(
                         'Items Recovered',
-                        style: TextStyle(fontSize: 11, color: Colors.white60),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? Colors.white60
+                              : AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -1610,7 +1732,9 @@ class _LiveStatsRow extends ConsumerWidget {
           Container(
             width: 1,
             height: 38,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : AppColors.outlineVariant,
           ),
           // Right Stat Block
           Expanded(
@@ -1645,17 +1769,24 @@ class _LiveStatsRow extends ConsumerWidget {
                         builder: (context, val, _) {
                           return Text(
                             formatNum(val.toInt()),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.onSurface,
                             ),
                           );
                         },
                       ),
-                      const Text(
+                      Text(
                         'Active Reports',
-                        style: TextStyle(fontSize: 11, color: Colors.white60),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? Colors.white60
+                              : AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

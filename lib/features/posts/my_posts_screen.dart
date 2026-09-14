@@ -149,7 +149,7 @@ class MyPostsScreen extends ConsumerWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.outline,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -219,7 +219,7 @@ class MyPostsScreen extends ConsumerWidget {
                                     item.location,
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.outline,
+                                      color: AppColors.onSurfaceVariant,
                                     ),
                                   ),
                                 ],

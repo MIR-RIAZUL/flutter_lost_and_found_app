@@ -77,8 +77,12 @@ service cloud.firestore {
           isClaimParticipant(resource.data.completedClaimId)
         ))
       );
-      // Owner or Admin can delete post
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      // Owner or Admin can delete post. Also allow claim participants to delete when claim is completed.
+      allow delete: if isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        isAdmin() ||
+        (resource.data.completedClaimId != null && isClaimParticipant(resource.data.completedClaimId))
+      );
     }
 
     // ── Claims ────────────────────────────────────────────────────────────────

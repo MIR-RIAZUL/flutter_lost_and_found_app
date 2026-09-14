@@ -230,7 +230,7 @@ class _ReportCardState extends ConsumerState<_ReportCard> {
                       'Reported by ${report.reporterName}',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.outline,
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -285,7 +285,10 @@ class _ReportCardState extends ConsumerState<_ReportCard> {
           // ── Timestamp ───────────────────────────────────────────────
           Text(
             _formatDate(report.createdAt),
-            style: const TextStyle(fontSize: 11, color: AppColors.outline),
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.onSurfaceVariant,
+            ),
           ),
 
           // ── Moderation actions ───────────────────────────────────────

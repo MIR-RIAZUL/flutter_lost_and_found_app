@@ -938,7 +938,7 @@ class FirestoreService {
           hasOwnerRated &&
           hasFinderRated) {
         final post = await getPost(claim.postId);
-        final historyId = 'hist_${claimId}';
+        final historyId = 'hist_$claimId';
         final historyDoc = await _historyRef.doc(historyId).get();
 
         if (!historyDoc.exists) {
@@ -973,13 +973,6 @@ class FirestoreService {
           );
 
           await _historyRef.doc(historyId).set(history.toMap());
-          await _postsRef.doc(claim.postId).update({
-            'status': 'completed',
-            'completedClaimId': claimId,
-          });
-
-          // Remove completed post from local memory feed store immediately
-          _localPosts.removeWhere((p) => p.id == claim.postId);
 
           await _claimsRef.doc(claimId).update({
             'status': 'completed',
@@ -999,7 +992,7 @@ class FirestoreService {
 
           final nowStr = DateTime.now().toIso8601String();
           await createNotification({
-            'id': 'notif_rec_complete_owner_${claimId}',
+            'id': 'notif_rec_complete_owner_$claimId',
             'userId': claim.postOwnerId,
             'title': 'Recovery Completed Successfully 🎉',
             'body':
@@ -1012,7 +1005,7 @@ class FirestoreService {
           });
 
           await createNotification({
-            'id': 'notif_rec_complete_finder_${claimId}',
+            'id': 'notif_rec_complete_finder_$claimId',
             'userId': claim.claimerId,
             'title': 'Recovery Completed Successfully 🎉',
             'body':
@@ -1024,6 +1017,34 @@ class FirestoreService {
             'timestamp': nowStr,
           });
 
+          // Mark post completed first so security rule verifies completedClaimId participant
+          try {
+            await _postsRef.doc(claim.postId).update({
+              'status': 'completed',
+              'completedClaimId': claimId,
+            });
+          } catch (_) {}
+
+          // Remove completed post from local memory feed store immediately
+          _localPosts.removeWhere((p) => p.id == claim.postId);
+
+          // Permanently delete original active post document from Firestore
+          try {
+            await _postsRef.doc(claim.postId).delete();
+          } catch (e) {
+            print('Post permanent deletion notice: $e');
+          }
+
+          return true;
+        } else {
+          // History record already exists — ensure active post document is deleted
+          _localPosts.removeWhere((p) => p.id == claim.postId);
+          try {
+            final pDoc = await _postsRef.doc(claim.postId).get();
+            if (pDoc.exists) {
+              await _postsRef.doc(claim.postId).delete();
+            }
+          } catch (_) {}
           return true;
         }
       }
@@ -1145,6 +1166,7 @@ class FirestoreService {
       await _db.collection('reviews').doc(rating.ratingId).set(rating.toMap());
     } catch (e) {
       print('createRating save notice: $e');
+      rethrow;
     }
 
     // 2. Recalculate average rating & total reviews for target user.
@@ -1213,14 +1235,14 @@ class FirestoreService {
   ) {
     return _ratingsRef
         .where('claimId', isEqualTo: claimId)
-        .where('fromUser', isEqualTo: fromUserId)
         .snapshots()
         .map((snapshot) {
-          if (snapshot.docs.isNotEmpty) {
-            return RatingModel.fromMap(
-              snapshot.docs.first.data() as Map<String, dynamic>,
-              snapshot.docs.first.id,
-            );
+          for (final doc in snapshot.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final fUser = data['fromUser'] ?? data['fromUserId'] ?? '';
+            if (fUser == fromUserId) {
+              return RatingModel.fromMap(data, doc.id);
+            }
           }
           return null;
         })

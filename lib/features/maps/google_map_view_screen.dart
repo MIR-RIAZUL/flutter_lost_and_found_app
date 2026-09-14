@@ -150,12 +150,19 @@ class _GoogleMapViewScreenState extends ConsumerState<GoogleMapViewScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        style: const TextStyle(fontSize: 13),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? AppColors.darkOnSurface
+                              : AppColors.onSurface,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Search items (e.g. iPhone, Keys)...',
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             fontSize: 13,
-                            color: AppColors.outline,
+                            color: isDark
+                                ? AppColors.darkOnSurfaceVariant
+                                : AppColors.onSurfaceVariant,
                           ),
                           border: InputBorder.none,
                           isDense: true,

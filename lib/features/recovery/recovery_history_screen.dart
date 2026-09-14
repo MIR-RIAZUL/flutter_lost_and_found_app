@@ -139,25 +139,25 @@ class _RecoveryHistoryScreenState extends ConsumerState<RecoveryHistoryScreen> {
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(
                             Icons.history_toggle_off_rounded,
                             size: 64,
-                            color: AppColors.outline,
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          SizedBox(height: 12),
-                          Text(
+                          const SizedBox(height: 12),
+                          const Text(
                             'No recovery history found.',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 4),
+                          const Text(
                             'Completed recoveries will be permanently archived here.',
                             style: TextStyle(
-                              color: AppColors.outline,
+                              color: AppColors.onSurfaceVariant,
                               fontSize: 12,
                             ),
                             textAlign: TextAlign.center,

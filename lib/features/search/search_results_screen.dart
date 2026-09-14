@@ -60,7 +60,7 @@ class SearchResultsScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   const Text(
                     'Try adjusting your search terms or filters',
-                    style: TextStyle(color: AppColors.outline),
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -151,14 +151,14 @@ class SearchResultsScreen extends ConsumerWidget {
                                 const Icon(
                                   Icons.location_on_outlined,
                                   size: 14,
-                                  color: AppColors.outline,
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   item.location,
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.outline,
+                                    color: AppColors.onSurfaceVariant,
                                   ),
                                 ),
                               ],

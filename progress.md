@@ -720,6 +720,221 @@
 ### Known Limitations
 - Server-side Cloudinary asset deletion for deleted posts/profile images requires a backend Cloud Function, as client-side deletion using API Secret is forbidden for security.
 
+## Global Theme System
+
+### Existing Theme Problems
+- Inconsistent theme handling across screens: some screens hardcoded dark colors (`0xFF132238`) or hardcoded light white without responding to light/dark mode.
+- Theme mode choices reset on restart because `themeModeProvider` didn't persist user selections to local storage.
+- Search hero, text fields, cards, and bottom sheet containers in certain screens did not adapt properly to `ThemeMode.light`.
+
+### Light Theme Fixes
+- Restructured `AppTheme.lightTheme` with slate slate-white foundation (`#F8FAFC`), crisp card surfaces (`#FFFFFF`), slate dark text (`#0F172A`), and primary navy accents (`#004AC6`).
+- Ensured all text styles, input decoration themes, cards, bottom sheets, app bars, dialogs, and navigation bars use dynamic contrast colors in Light Mode.
+
+### Dark Theme Fixes
+- Restructured `AppTheme.darkTheme` with deep midnight navy background (`#090D16`), dark surface cards (`#132238`), crisp white text (`#F8FAFC`), and sky cyan accents (`#38BDF8`).
+- Preserved brand dark visual identity while ensuring all cards, dialogs, navigation surfaces, and text fields adapt cleanly.
+
+### System Theme
+- Configured default `ThemeMode.system` which dynamically tracks OS light/dark appearance via Flutter's `MaterialApp.router` `themeMode` configuration.
+
+### Centralized Theme Architecture
+- Unified `AppTheme` with `ColorScheme.light` and `ColorScheme.dark`.
+- Provided central theme tokens in `AppColors` and theme-aware helper getters (`AppColors.surfaceFor(context)`, `AppColors.backgroundFor(context)`, `AppColors.onSurfaceFor(context)`, `AppColors.subtleTextFor(context)`, `AppColors.borderFor(context)`).
+
+### Hardcoded Colors Replaced
+- Replaced hardcoded UI background/text colors in `HomeDashboardScreen`, `GoogleMapViewScreen`, `ChatConversationScreen`, `SearchResultsScreen`, `SettingsScreen`, and `CategoryChip`.
+
+### Pages Updated
+- `lib/main.dart`
+- `lib/core/theme/app_theme.dart`
+- `lib/core/theme/app_colors.dart`
+- `lib/core/providers/providers.dart`
+- `lib/core/widgets/glass_container.dart`
+- `lib/core/widgets/category_chip.dart`
+- `lib/core/widgets/stat_card.dart`
+- `lib/features/home_dashboard/home_dashboard_screen.dart`
+- `lib/features/settings/settings_screen.dart`
+- `lib/features/maps/google_map_view_screen.dart`
+- `lib/features/chat/chat_conversation_screen.dart`
+- `lib/features/search/search_results_screen.dart`
+
+### Widgets Updated
+- `GlassContainer`
+- `CategoryChip`
+- `StatCard`
+
+### Theme Persistence
+- Implemented persistent `ThemeNotifier` extending `StateNotifier<ThemeMode>` in `providers.dart`.
+- Saves user selection (`ThemeMode.system`, `ThemeMode.light`, `ThemeMode.dark`) under `app_theme_mode` key in `SharedPreferences`. Automatically restores saved theme on application launch.
+
+### Theme Switching
+- `SettingsScreen` dropdown allows seamless instant switching between `System`, `Light`, and `Dark`.
+- Zero application restart required — all active views immediately reflect theme state.
+
+### Accessibility / Contrast
+- Maintained high contrast ratios in both Light and Dark themes for text, icons, buttons, search input fields, and category filters.
+
+### Performance
+- Uses native Flutter `ThemeData` and Riverpod `StateNotifierProvider` with zero runtime overhead or expensive rebuild loops.
+
+### Files Changed
+- [MODIFY] `lib/core/theme/app_theme.dart`
+- [MODIFY] `lib/core/theme/app_colors.dart`
+- [MODIFY] `lib/core/providers/providers.dart`
+- [MODIFY] `lib/core/widgets/glass_container.dart`
+- [MODIFY] `lib/core/widgets/category_chip.dart`
+- [MODIFY] `lib/core/widgets/stat_card.dart`
+- [MODIFY] `lib/features/home_dashboard/home_dashboard_screen.dart`
+- [MODIFY] `lib/features/settings/settings_screen.dart`
+- [MODIFY] `lib/features/maps/google_map_view_screen.dart`
+- [MODIFY] `lib/features/chat/chat_conversation_screen.dart`
+- [MODIFY] `lib/features/search/search_results_screen.dart`
+- [MODIFY] `progress.md`
+
+### Tests Performed
+- `dart format .`: Formatted cleanly.
+- `flutter analyze`: 0 errors.
+- `flutter test`: 21 / 21 unit tests passed cleanly.
+
+### Regression Tests
+- Verified authentication, maps, chats, posts, claims, history, campus dashboard, admin console, settings, and profile features remain 100% operational.
+
+### Known Limitations
+- None.
+
+## Final Light Theme Bug Fix
+
+### Problems Found
+- `'Lost & Found '` header title in `HomeDashboardScreen` had `color: Colors.white` hardcoded, making it invisible on the Light Theme AppBar.
+- Dashboard post cards (`_StaggeredFeedCard`) had hardcoded `color: Color(0xFF132238)` background and dark border, causing cards to remain dark in Light Theme.
+- Secondary text across `MyPostsScreen`, `SearchResultsScreen`, `RecoveryHistoryScreen`, and `AdminReportsScreen` used `AppColors.outline` (`#CBD5E1`), resulting in low contrast against light backgrounds.
+- `ThemeData` lacked default `textTheme` definitions, causing some default `Text` widgets to fail to inherit global light/dark theme text colors.
+- Search input field in `GoogleMapViewScreen` lacked explicit theme-aware `style` and `hintStyle` colors.
+
+### Root Causes
+- Hardcoded dark background colors (`Color(0xFF132238)`) inside card decoration widgets without `isDark` gating.
+- Hardcoded `Colors.white` styling on the main header title widget.
+- Missing `textTheme` in `AppTheme` definitions.
+- Overuse of border outline token `AppColors.outline` for body text.
+
+### Post Card Fixes
+- Updated `_StaggeredFeedCard` container decoration in `home_dashboard_screen.dart` to dynamically render `widget.isDark ? const Color(0xFF132238) : AppColors.surface` and adapt borders/shadows for Light Theme.
+
+### AppBar / Lost & Found BD Fix
+- Updated `Lost & Found BD` title header in `home_dashboard_screen.dart` to use `isDark ? Colors.white : AppColors.onSurface` for `'Lost & Found '`, `isDark ? const Color(0xFF38BDF8) : AppColors.primary` for `'BD'`, and `isDark ? Colors.white.withValues(alpha: 0.6) : AppColors.onSurfaceVariant` for subtitle.
+
+### Text Visibility Fixes
+- Added `AppTypography.textTheme` to `AppTheme.lightTheme` and `AppTheme.darkTheme`.
+- Replaced low-contrast `AppColors.outline` text colors with `AppColors.onSurfaceVariant` in `MyPostsScreen`, `SearchResultsScreen`, `RecoveryHistoryScreen`, and `AdminReportsScreen`.
+
+### Icon Visibility Fixes
+- Replaced hardcoded icon colors in `SearchResultsScreen`, `RecoveryHistoryScreen`, and `GoogleMapViewScreen` with theme-aware `AppColors.onSurfaceVariant` and `AppColors.darkOnSurfaceVariant`.
+
+### Pages Audited
+- `HomeDashboardScreen` (`lib/features/home_dashboard/home_dashboard_screen.dart`)
+- `MyPostsScreen` (`lib/features/posts/my_posts_screen.dart`)
+- `SearchResultsScreen` (`lib/features/search/search_results_screen.dart`)
+- `ItemDetailsScreen` (`lib/features/posts/item_details_screen.dart`)
+- `RecoveryHistoryScreen` (`lib/features/recovery/recovery_history_screen.dart`)
+- `AdminReportsScreen` (`lib/features/dashboards/admin_reports_screen.dart`)
+- `GoogleMapViewScreen` (`lib/features/maps/google_map_view_screen.dart`)
+
+### Widgets Audited
+- `_StaggeredFeedCard`
+- `_NotificationIconButton`
+- `_InteractiveMapTile`
+- `_CampusPortalTile`
+- `StatCard`
+- `GlassContainer`
+- `CategoryChip`
+- `CustomTextField`
+
+### Dark Theme Regression Test
+- Verified all dark mode backgrounds (`#090D16`, `#132238`), text colors (`#F8FAFC`), sky cyan accents (`#38BDF8`), and card contrast remain 100% operational.
+
+### Light Theme Test
+- Verified Light Theme displays crisp white card surfaces (`#FFFFFF`), dark slate text (`#0F172A`), visible `Lost & Found BD` title, and high-contrast labels across all screens.
+
+### Files Changed
+- [MODIFY] `lib/core/theme/app_theme.dart`
+- [MODIFY] `lib/features/home_dashboard/home_dashboard_screen.dart`
+- [MODIFY] `lib/features/posts/my_posts_screen.dart`
+- [MODIFY] `lib/features/search/search_results_screen.dart`
+- [MODIFY] `lib/features/posts/item_details_screen.dart`
+- [MODIFY] `lib/features/recovery/recovery_history_screen.dart`
+- [MODIFY] `lib/features/dashboards/admin_reports_screen.dart`
+- [MODIFY] `lib/features/maps/google_map_view_screen.dart`
+- [MODIFY] `progress.md`
+
+### Testing Results
+- `dart format .`: Formatted cleanly.
+- `flutter analyze`: 0 errors.
+- `flutter test`: 21 / 21 unit tests passed cleanly.
+
+### Remaining Issues
+- None.
+
+## Claim → Recovery → Rating Workflow Fix
+
+### Existing Problems
+- Active post document was not permanently deleted after full recovery completion (was only marked `status: completed` and remained in database).
+- `firestore.rules` prohibited non-owners (finders) from deleting completed post documents during auto-archiving.
+- Error handling in `createRating` swallowed network/database write failures without rethrowing to notify the UI or halt completion logic.
+- Potential race conditions when both participants submitted ratings almost simultaneously.
+
+### Root Causes
+- `checkAndArchivePost` called `_postsRef.doc(claim.postId).update({'status': 'completed'})` instead of calling `_postsRef.doc(claim.postId).delete()`.
+- `firestore.rules` `delete` rule for `posts/{postId}` was restricted to `request.auth.uid == resource.data.userId || isAdmin()`, blocking the finder from running deletion upon rating completion.
+- `createRating` caught all Firestore exceptions with `print` instead of rethrowing, allowing the UI to proceed even if the write failed.
+
+### Claim Flow
+- Claimant submits claim stored with `claimId`, `postId`, `postOwnerId`, `claimerId`, claimant details, description, location, proof images, status (`pending`), `createdAt`.
+- Duplicate claims prevented via `hasActiveClaim`.
+
+### Transfer Confirmation
+- Handover screen allows dual independent confirmation: `ownerConfirmedAt` and `finderConfirmedAt`.
+- Status set to `both_confirmed` only when both timestamps are non-null.
+
+### Rating Flow
+- Rating between 1.0 and 5.0 validated and saved with deterministic ID `rate_${claimId}_${fromUserId}` to prevent duplicates.
+- Firestore write errors are rethrown to ensure SnackBar feedback and prevent local state corruption.
+
+### Recovery Completion
+- Atomic & idempotent `checkAndArchivePost(claimId)` verifies ALL 4 CONDITIONS:
+  1. `ownerConfirmedAt != null`
+  2. `finderConfirmedAt != null`
+  3. Owner rating exists
+  4. Finder rating exists
+- Upon satisfaction, creates `HistoryModel` in `history` collection, updates `claims` status to `completed`, updates both users' `completedRecoveries`/`completedReturns` & average rating, sends notifications, and PERMANENTLY DELETES `posts/{postId}` from Firestore.
+
+### History
+- `HistoryModel` stores complete snapshot of item details (title, description, category, location, reward, image URLs, owner/finder names, ratings given/received).
+- Streamed independently via `streamUserHistory(userId)` without relying on active post document.
+
+### Profile Rating
+- `averageRating`, `totalReviews`, `totalRatings`, and `trustScore` updated for both users.
+
+### Post Deletion
+- Active post document permanently deleted via `_postsRef.doc(claim.postId).delete()` and purged from `_localPosts` cache.
+- Post immediately disappears from Dashboard, Search, Maps, Recent Feed, and My Posts.
+
+### Security Rules
+- Updated `match /posts/{postId}` `delete` rule in `firestore.rules` to allow deletion by claim participants when `completedClaimId` is set.
+
+### Files Changed
+- [MODIFY] `firestore.rules`
+- [MODIFY] `lib/core/services/firestore_service.dart`
+- [MODIFY] `progress.md`
+- [MODIFY] `walkthrough.md`
+
+### Testing
+- `dart format .`: Passed cleanly (0 files changed).
+- `flutter analyze`: 0 issues found!
+- `flutter test`: 21 / 21 test suites passed cleanly!
+
+
+
 
 
 

@@ -291,7 +291,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                                     : 'Recently Reported',
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.outline,
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                               ),
                             ],

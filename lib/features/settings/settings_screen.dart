@@ -253,7 +253,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       value: themeMode,
                       onChanged: (val) {
                         if (val != null) {
-                          ref.read(themeModeProvider.notifier).state = val;
+                          ref
+                              .read(themeModeProvider.notifier)
+                              .setThemeMode(val);
                         }
                       },
                       items: const [

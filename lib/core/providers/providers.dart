@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/user_model.dart';
@@ -34,8 +35,42 @@ final currentUserProvider = StreamProvider<UserModel?>((ref) {
   return ref.watch(firestoreServiceProvider).streamUser(authUser.uid);
 });
 
-// Theme State Provider
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+// Persistent Theme Notifier
+class ThemeNotifier extends StateNotifier<ThemeMode> {
+  static const String _prefKey = 'app_theme_mode';
+
+  ThemeNotifier() : super(ThemeMode.system) {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIndex = prefs.getInt(_prefKey);
+      if (savedIndex != null &&
+          savedIndex >= 0 &&
+          savedIndex < ThemeMode.values.length) {
+        state = ThemeMode.values[savedIndex];
+      }
+    } catch (_) {}
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = mode;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_prefKey, mode.index);
+    } catch (_) {}
+  }
+
+  set stateValue(ThemeMode mode) => setThemeMode(mode);
+}
+
+final themeModeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((
+  ref,
+) {
+  return ThemeNotifier();
+});
 
 // Category Filter Provider
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
