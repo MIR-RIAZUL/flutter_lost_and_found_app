@@ -80,6 +80,9 @@ service cloud.firestore {
       // Owner or Admin can delete post. Also allow claim participants to delete when claim is completed.
       allow delete: if isSignedIn() && (
         request.auth.uid == resource.data.userId ||
+        (resource.data.posterId != null && resource.data.posterId == request.auth.uid) ||
+        (resource.data.ownerId != null && resource.data.ownerId == request.auth.uid) ||
+        (resource.data.createdBy != null && resource.data.createdBy == request.auth.uid) ||
         isAdmin() ||
         (resource.data.completedClaimId != null && isClaimParticipant(resource.data.completedClaimId))
       );
@@ -87,12 +90,8 @@ service cloud.firestore {
 
     // ── Claims ────────────────────────────────────────────────────────────────
     match /claims/{claimId} {
-      // Owner, claimer, or admin can read the claim document
-      allow read: if isSignedIn() && (
-        request.auth.uid == resource.data.postOwnerId ||
-        request.auth.uid == resource.data.claimerId ||
-        isAdmin()
-      );
+      // Signed-in users can query claims for a post; update/delete remain restricted to participants
+      allow read: if isSignedIn();
       // Authenticated user can submit a claim where they are the claimer
       allow create: if isSignedIn() &&
         request.auth.uid == request.resource.data.claimerId;

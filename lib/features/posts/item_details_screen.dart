@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,102 +10,13 @@ import '../../core/models/post_model.dart';
 import '../../core/models/claim_model.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/firestore_service.dart';
+import '../../core/utils/post_delete_helper.dart';
 import 'report_post_sheet.dart';
 
 class ItemDetailsScreen extends ConsumerWidget {
   final String id;
 
   const ItemDetailsScreen({super.key, required this.id});
-
-  Future<void> _confirmAndDeletePost(
-    BuildContext context,
-    WidgetRef ref,
-    PostModel post,
-    String currentUserId,
-  ) async {
-    final firestoreService = ref.read(firestoreServiceProvider);
-
-    // 1. Safety check: Check if post has an active approved claim
-    try {
-      final claims = await firestoreService.streamClaimsForPost(post.id).first;
-      final hasApprovedClaim = claims.any((c) => c.status == 'approved');
-      if (hasApprovedClaim) {
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Cannot Delete Post'),
-              content: const Text(
-                'This post has an active approved claim or recovery in progress. Please complete or resolve the recovery process first.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-    } catch (_) {}
-
-    // 2. Show confirmation dialog
-    if (!context.mounted) return;
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Post?'),
-        content: Text(
-          'Are you sure you want to delete "${post.title}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        await firestoreService.deletePost(
-          postId: post.id,
-          userId: currentUserId,
-        );
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Post deleted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          context.pop();
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Failed to delete post: ${e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim()}',
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -207,12 +118,13 @@ class ItemDetailsScreen extends ConsumerWidget {
                               color: AppColors.error,
                             ),
                             tooltip: 'Delete Post',
-                            onPressed: () => _confirmAndDeletePost(
-                              context,
-                              ref,
-                              post,
-                              currentUid,
-                            ),
+                            onPressed: () =>
+                                PostDeleteHelper.confirmAndDeletePost(
+                                  context: context,
+                                  ref: ref,
+                                  post: post,
+                                  onSuccess: () => context.pop(),
+                                ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -365,7 +277,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                                     ],
                                   ),
                                   Text(
-                                    '৳ ${rewardAmount.round()}',
+                                    'à§³ ${rewardAmount.round()}',
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -423,7 +335,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'NID Verified Member • $location',
+                                        'NID Verified Member â€¢ $location',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           color: AppColors.outline,
@@ -535,7 +447,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                             ],
                           ),
 
-                          // Report Post — only shown to authenticated non-owners
+                          // Report Post â€” only shown to authenticated non-owners
                           if (!isPostOwner && currentUid != null) ...[
                             const SizedBox(height: 12),
                             SizedBox(

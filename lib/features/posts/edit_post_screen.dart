@@ -10,6 +10,7 @@ import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/app_image.dart';
 import '../../core/models/post_model.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/post_delete_helper.dart';
 
 class EditPostScreen extends ConsumerStatefulWidget {
   final String postId;
@@ -313,6 +314,24 @@ class _EditPostScreenState extends ConsumerState<EditPostScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: _isSaving ? null : () => context.pop(),
           ),
+          actions: [
+            if (_post != null)
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.error,
+                ),
+                tooltip: 'Delete Post',
+                onPressed: _isSaving
+                    ? null
+                    : () => PostDeleteHelper.confirmAndDeletePost(
+                        context: context,
+                        ref: ref,
+                        post: _post!,
+                        onSuccess: () => context.pop(),
+                      ),
+              ),
+          ],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -645,6 +664,29 @@ class _EditPostScreenState extends ConsumerState<EditPostScreen> {
                   isLoading: _isSaving,
                   onPressed: _isSaving ? null : _savePostChanges,
                 ),
+                if (_post != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _isSaving
+                        ? null
+                        : () => PostDeleteHelper.confirmAndDeletePost(
+                            context: context,
+                            ref: ref,
+                            post: _post!,
+                            onSuccess: () => context.pop(),
+                          ),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    label: const Text('Delete Post'),
+                  ),
+                ],
               ],
             ),
           ),

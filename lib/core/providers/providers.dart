@@ -97,6 +97,14 @@ final rawAllPostsStreamProvider = StreamProvider<List<PostModel>>((ref) {
   return ref.watch(firestoreServiceProvider).streamRawAllPosts();
 });
 
+// User Posts Stream Provider (by userId)
+final userPostsStreamProvider = StreamProvider.family<List<PostModel>, String>((
+  ref,
+  userId,
+) {
+  return ref.watch(firestoreServiceProvider).streamUserPosts(userId);
+});
+
 // Campus Providers
 final selectedCampusProvider = StateProvider<CampusModel?>((ref) => null);
 

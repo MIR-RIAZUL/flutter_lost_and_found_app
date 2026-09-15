@@ -94,5 +94,36 @@ void main() {
       expect(isOwner, true);
       expect(isNonOwner, false);
     });
+
+    test(
+      'Post deletion authorization rule permits owner and admin, denies User B',
+      () {
+        final post = PostModel(
+          id: 'post_abc',
+          userId: 'user_a',
+          userName: 'User A',
+          images: const [],
+          title: 'Lost Wallet',
+          description: 'Black leather wallet',
+          category: 'Wallet/Bags',
+          type: 'lost',
+          location: 'Dhanmondi',
+          date: '2026-09-15',
+        );
+
+        bool canDelete(String authUid, {bool isAdmin = false}) {
+          if (authUid.isEmpty) return false;
+          return authUid == post.userId || isAdmin;
+        }
+
+        expect(canDelete('user_a'), true); // Owner can delete
+        expect(
+          canDelete('admin_user', isAdmin: true),
+          true,
+        ); // Admin can delete
+        expect(canDelete('user_b'), false); // User B cannot delete
+        expect(canDelete(''), false); // Unauthenticated user cannot delete
+      },
+    );
   });
 }

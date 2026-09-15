@@ -7,98 +7,10 @@ import '../../core/widgets/app_image.dart';
 import '../../core/models/post_model.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/firestore_service.dart';
+import '../../core/utils/post_delete_helper.dart';
 
 class MyPostsScreen extends ConsumerWidget {
   const MyPostsScreen({super.key});
-
-  Future<void> _confirmAndDeletePost(
-    BuildContext context,
-    WidgetRef ref,
-    PostModel item,
-    String currentUserId,
-  ) async {
-    final firestoreService = ref.read(firestoreServiceProvider);
-
-    // 1. Safety check: Check if post has an active approved claim
-    try {
-      final claims = await firestoreService.streamClaimsForPost(item.id).first;
-      final hasApprovedClaim = claims.any((c) => c.status == 'approved');
-      if (hasApprovedClaim) {
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Cannot Delete Post'),
-              content: const Text(
-                'This post has an active approved claim or recovery in progress. Please complete or resolve the recovery process first.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-    } catch (_) {}
-
-    // 2. Show confirmation dialog
-    if (!context.mounted) return;
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Post?'),
-        content: Text(
-          'Are you sure you want to delete "${item.title}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        await firestoreService.deletePost(
-          postId: item.id,
-          userId: currentUserId,
-        );
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Post deleted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Failed to delete post: ${e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim()}',
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -243,12 +155,12 @@ class MyPostsScreen extends ConsumerWidget {
                                     color: AppColors.error,
                                   ),
                                   tooltip: 'Delete Post',
-                                  onPressed: () => _confirmAndDeletePost(
-                                    context,
-                                    ref,
-                                    item,
-                                    user.uid,
-                                  ),
+                                  onPressed: () =>
+                                      PostDeleteHelper.confirmAndDeletePost(
+                                        context: context,
+                                        ref: ref,
+                                        post: item,
+                                      ),
                                 ),
                               ],
                             ),

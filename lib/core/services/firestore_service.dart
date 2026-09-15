@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/post_model.dart';
@@ -93,21 +94,49 @@ class FirestoreService {
     required String postId,
     required String userId,
   }) async {
+    debugPrint("DELETE POST START");
+    debugPrint("postId: $postId");
+    debugPrint("currentUserUid: $userId");
+
+    if (userId.isEmpty) {
+      throw 'Please log in to delete your post.';
+    }
+
     final postDoc = await _postsRef.doc(postId).get();
+    debugPrint("document exists: ${postDoc.exists}");
+    debugPrint("document data: ${postDoc.data()}");
+
     if (postDoc.exists) {
       final data = postDoc.data() as Map<String, dynamic>?;
-      final postOwnerId = data?['userId'];
-      if (postOwnerId != null && postOwnerId != userId) {
-        throw 'You are not authorized to delete this post.';
+      final postOwnerId =
+          data?['userId'] ??
+          data?['posterId'] ??
+          data?['ownerId'] ??
+          data?['createdBy'];
+
+      // Verify server-side ownership (or admin check if user document indicates admin)
+      if (postOwnerId != null &&
+          postOwnerId.toString().isNotEmpty &&
+          postOwnerId != userId) {
+        // Double check if user is admin
+        final userDoc = await _usersRef.doc(userId).get();
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        final isAdminUser = userData?['role'] == 'admin';
+        if (!isAdminUser) {
+          throw 'You can only delete your own post.';
+        }
       }
     }
 
-    // 1. Remove from local memory store
+    // 1. Delete from Cloud Firestore FIRST (must be awaited)
+    await _postsRef.doc(postId).delete();
+
+    // 2. Remove from local memory store after Firestore delete succeeds
     _localPosts.removeWhere((p) => p.id == postId);
     _localImageBytes.remove(postId);
-
-    // 2. Delete from Cloud Firestore
-    await _postsRef.doc(postId).delete();
+    debugPrint(
+      'Post $postId successfully deleted from Firestore and local store.',
+    );
   }
 
   // In-memory local posts cache to ensure newly posted items are immediately available
@@ -458,6 +487,24 @@ class FirestoreService {
           return claims;
         })
         .handleError((_) => <ClaimModel>[]);
+  }
+
+  /// One-shot fetch for claims associated with a post (useful for non-blocking checks).
+  Future<List<ClaimModel>> getClaimsForPost(String postId) async {
+    try {
+      final snapshot = await _claimsRef
+          .where('postId', isEqualTo: postId)
+          .get();
+      return snapshot.docs
+          .map(
+            (doc) =>
+                ClaimModel.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('Error getting claims for post $postId: $e');
+      return [];
+    }
   }
 
   Future<void> updateClaimStatus(String claimId, String status) async {

@@ -53,6 +53,8 @@ class PostModel {
       'date': date,
       'images': images,
       'userId': userId,
+      'posterId': userId,
+      'ownerId': userId,
       'userName': userName,
       'userAvatar': userAvatar,
       'status': status,
@@ -75,7 +77,12 @@ class PostModel {
       longitude: (map['longitude'] as num?)?.toDouble() ?? 90.4125,
       date: map['date'] ?? '',
       images: List<String>.from(map['images'] ?? []),
-      userId: map['userId'] ?? '',
+      userId:
+          map['userId'] ??
+          map['posterId'] ??
+          map['ownerId'] ??
+          map['createdBy'] ??
+          '',
       userName: map['userName'] ?? 'Anonymous',
       userAvatar: map['userAvatar'] ?? '',
       status: map['status'] ?? 'active',

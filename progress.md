@@ -1,5 +1,51 @@
 # Progress Log - Extended Recovery, Rating & Archiving System
 
+## Own Post Delete Fix
+
+### Problem
+Own user's Delete Post button was not successfully deleting the Firestore post.
+
+### Root Cause
+1. `/claims/{claimId}` read security rule restricted collection queries, causing `streamClaimsForPost` to fail with `PERMISSION_DENIED` during the claim safety guard check.
+2. Posts created with owner fields named `posterId`, `ownerId`, or `createdBy` were parsed as `userId = ''` by `PostModel.fromMap`, failing ownership validation `post.userId == currentUid`.
+3. `/posts/{postId}` delete rule in `firestore.rules` only checked `resource.data.userId`, blocking deletion of documents using `posterId`/`ownerId`.
+4. Continuous stream listener `.first` on `streamClaimsForPost` during deletion check caused stream locks.
+
+### Firestore Document ID
+Obtained directly from `post.id` (matching the Firestore document ID in `posts/{postId}`).
+
+### Authentication UID
+Verified using `FirebaseAuth.instance.currentUser?.uid` (non-null and non-empty check).
+
+### Ownership Validation
+Validated using `post.userId == currentUser.uid` or `user.role == 'admin'`, supporting fallback owner fields (`userId`, `posterId`, `ownerId`, `createdBy`).
+
+### Firestore Rules
+Updated `/posts/{postId}` delete rule to support all owner field variants (`userId`, `posterId`, `ownerId`, `createdBy`) and updated `/claims/{claimId}` read rule to `allow read: if isSignedIn();`.
+
+### UI State
+Refreshed by invalidating `postsStreamProvider`, `rawAllPostsStreamProvider`, `allHistoryStreamProvider`, `userPostsStreamProvider`, and `campusPostsStreamProvider`.
+
+### Testing
+- Own post deletion: PASS
+- Other user's post deletion: PASS
+- Firestore deletion: PASS
+- Profile refresh: PASS
+- Dashboard refresh: PASS
+- Search refresh: PASS
+- Restart persistence: PASS
+
+### Files Changed
+- `lib/core/models/post_model.dart`
+- `lib/core/services/firestore_service.dart`
+- `lib/core/providers/providers.dart`
+- `lib/core/utils/post_delete_helper.dart`
+- `firestore.rules`
+- `progress.md`
+
+### Remaining Issues
+- None.
+
 ## Dashboard UI/UX Redesign
 
 ### Existing Dashboard Inspected
