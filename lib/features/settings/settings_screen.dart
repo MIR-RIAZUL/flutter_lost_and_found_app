@@ -67,7 +67,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       } else {
         if (mounted) {
           setState(() => _isDeletingAccount = false);
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.maybeOf(this.context);
+          messenger?.showSnackBar(
             SnackBar(
               content: Text(
                 'Failed to delete account: ${e.toString().replaceAll(RegExp(r'\[.*?\]'), '').trim()}',
