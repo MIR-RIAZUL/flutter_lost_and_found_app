@@ -89,7 +89,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       await firestoreService.deleteUserData(uid);
     } catch (e) {
-      print('Firestore delete user data notice: $e');
+      debugPrint('Firestore delete user data notice: $e');
     }
 
     // 2. Delete Firebase Authentication account
